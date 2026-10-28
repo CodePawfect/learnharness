@@ -32,17 +32,20 @@ Open **Review** in the sidebar, create a measurable goal (or ask the tutor to pr
 
 See [the fork's learning design and operations](docs/evidence-based-learning.md) and [the evaluation protocol](docs/learning-evaluation.md). Export evidence from Review and run `npm run evaluate:learning -- /path/to/export.json` for descriptive delayed-transfer results. No learning-outcome benefit has yet been established by a controlled study.
 
-### Start with persistent local storage (macOS)
+### Easy local start
 
-Install dependencies once with `npm ci`, then start with a stable data and key location outside the checkout:
+On macOS, double-click **Start.command** in the repository. It starts LearnHarness and opens your browser when the server is ready. Double-click **Daten.command** to open your saved-learning folder in Finder.
+
+From a terminal, the equivalent commands are:
 
 ```sh
-LH_DATA_DIR="$HOME/Library/Application Support/LearnHarness" \
-LH_AUTH_FILE="$HOME/Library/Application Support/LearnHarness/auth.json" \
-npm run dev
+npm run local    # start with persistent storage
+npm run data     # open the saved-learning folder
 ```
 
-Open `http://localhost:3000` and configure your providers/models. Use the same paths at every start. Chats, graph, settings, prompt overrides, and `learning.json` persist in this data folder; provider keys entered in the app persist in its private `auth.json`. Back up the entire folder securely. Without these overrides, development uses the checkout's gitignored `data/` and `auth.json`, which also persist between restarts but can be lost if the checkout is deleted. A browser refresh or stopping the server does not erase saved learning history. For a production server, run `npm run build` once and use `npm start` with the same two environment variables.
+Run `npm ci` once if dependencies are missing. Stop the server with **Ctrl+C** in its terminal window; saved learning remains. Each launch prints the browser address and storage location. On macOS the stable default is `~/Library/Application Support/LearnHarness`, matching the earlier manual startup instructions. Chats, graph, settings, prompt overrides, `learning.json`, and provider keys entered in the app are kept there. Back up the entire folder securely. `npm run local -- --show-path` prints the location without starting anything.
+
+Windows uses `%APPDATA%/LearnHarness`; Linux uses `$XDG_DATA_HOME/LearnHarness` or `~/.local/share/LearnHarness`. Explicit shell `LH_DATA_DIR` and `LH_AUTH_FILE` overrides remain supported. The launcher does not move or merge existing records from another location. Ordinary `npm run dev` retains its original checkout-local defaults. For a production server, build once with `npm run build`, then use `npm start` with explicit `LH_DATA_DIR` and `LH_AUTH_FILE` pointing to the same folder.
 
 ## How it works
 
