@@ -22,6 +22,28 @@ Instead of just giving you an explanation, it uses your answers and thinking to 
 
 ![LearnHarness teaching session](docs/assets/teaching-session.png)
 
+## CodePawfect fork: evidence and delayed review
+
+This fork adds a **Review** workspace with persistent learning goals, source-checked answer keys, independent application tasks, tutor observations linked to learner messages, and a due queue. Teaching preferences apply to the next tutor turn. Existing chats and the content graph remain compatible.
+
+A graph node records what was covered. The separate learning history records what was attempted, with what help, how it was checked, and when. Demonstrated/retained labels require delayed, unaided answers to distinct checked questions; self-assessed projects and model judgments remain separately labeled. The interval schedule is a transparent heuristic, not a validated prediction of memory.
+
+Open **Review** in the sidebar, create a measurable goal (or ask the tutor to propose one), check its answer keys against the cited references, and start a due review. Review works without a model connection; tutoring still uses your configured providers. No background notifications are scheduled.
+
+See [the fork's learning design and operations](docs/evidence-based-learning.md) and [the evaluation protocol](docs/learning-evaluation.md). Export evidence from Review and run `npm run evaluate:learning -- /path/to/export.json` for descriptive delayed-transfer results. No learning-outcome benefit has yet been established by a controlled study.
+
+### Start with persistent local storage (macOS)
+
+Install dependencies once with `npm ci`, then start with a stable data and key location outside the checkout:
+
+```sh
+LH_DATA_DIR="$HOME/Library/Application Support/LearnHarness" \
+LH_AUTH_FILE="$HOME/Library/Application Support/LearnHarness/auth.json" \
+npm run dev
+```
+
+Open `http://localhost:3000` and configure your providers/models. Use the same paths at every start. Chats, graph, settings, prompt overrides, and `learning.json` persist in this data folder; provider keys entered in the app persist in its private `auth.json`. Back up the entire folder securely. Without these overrides, development uses the checkout's gitignored `data/` and `auth.json`, which also persist between restarts but can be lost if the checkout is deleted. A browser refresh or stopping the server does not erase saved learning history. For a production server, run `npm run build` once and use `npm start` with the same two environment variables.
+
 ## How it works
 
 1. **Measure.** Before teaching, the agent finds where your understanding ends on each part the lesson depends on. Your answers, confidence, and thinking show it where to start.

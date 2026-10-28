@@ -64,6 +64,9 @@ export function KeyboardShortcuts() {
 			// the default action runs after dispatch, so suppressing it here
 			// works from any focus.
 			if (e.key === "Tab") {
+				// Review uses native forms and controls. Keep its Tab order intact;
+				// the classroom's custom field/thinking-level cycle stays scoped there.
+				if (e.target instanceof Element && e.target.closest(".lh-learning")) return;
 				e.preventDefault();
 				if (e.shiftKey) window.dispatchEvent(new CustomEvent("lh:kbd-cycle-thinking"));
 				// Plain Tab cycles the active surface's text fields (owner,

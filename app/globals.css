@@ -27,6 +27,13 @@
 	outline: none;
 }
 
+/* Review is a keyboard-operable work surface. Keep its focus visible without
+   changing the interaction styling of the existing classroom or graph. */
+.lh-learning :focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: 3px;
+}
+
 /* Palette (owner's hexes): main #141414, raised #1C1C1C, edges #434343.
    Mono chrome = JetBrains Mono; prose = Source Sans 3; titles = CMU Serif. */
 :root {
