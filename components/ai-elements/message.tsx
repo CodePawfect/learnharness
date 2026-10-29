@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { cjk } from "@streamdown/cjk";
-import { code } from "@streamdown/code";
+import { createCodePlugin } from "@streamdown/code";
 import { createMathPlugin } from "@streamdown/math";
 
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
@@ -351,7 +351,7 @@ export const streamdownPlugins = {
     ...cjk,
     remarkPluginsAfter: [...cjk.remarkPluginsAfter, remarkBreaks],
   },
-  code,
+  code: createCodePlugin({ themes: ["rose-pine-moon", "rose-pine-moon"] }),
   math: createMathPlugin({ singleDollarTextMath: true }),
 } as unknown as PluginConfig;
 
@@ -368,8 +368,8 @@ export const MessageResponse = memo(
     return (
       <Streamdown
         className={cn(
-          // Source Sans 3 + emphasis-color tokens on every markdown surface
-          // (labels stay JetBrains Mono). Unlayered plain CSS wins over text-sm.
+          // Bundled Hack Nerd Font + Moon emphasis on markdown surfaces.
+          // Unlayered plain CSS wins over text-sm.
           "lh-prose size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
           className
         )}

@@ -64,6 +64,13 @@ try {
 		return { status: res.status, body: await res.json() };
 	}, action, payload);
 	await contains("Create learning goal");
+	const theme = await page.evaluate(async () => {
+		await document.fonts.ready;
+		return { background: getComputedStyle(document.body).backgroundColor, font: getComputedStyle(document.body).fontFamily,
+			loaded: document.fonts.check('16px "Hack Nerd Font"', 'Äöß \uf120') };
+	});
+	assert.equal(theme.background, "rgb(35, 33, 54)");
+	assert.ok(theme.font.includes("Hack Nerd Font") && theme.loaded, "real bundled Hack font loaded");
 	await page.screenshot({ path: path.join(artifacts, "review-empty-desktop.png") });
 	await fill('[name="title"]', "Apply multiplication — synthetic test");
 	await fill('[name="objective"]', "Find totals in unfamiliar grouping problems without hints.");
@@ -134,10 +141,43 @@ try {
 	assert.equal(await page.evaluate(() => getComputedStyle(document.activeElement).outlineStyle), "solid");
 	await page.keyboard.press("Enter");
 	await page.waitForSelector('input[name="title"]');
+
+	// Exercise actual markdown rendering, including themed code, emphasis and diagrams.
+	const demo = await api("create_goal", { title: "Bayes verstehen — Theme-Vorschau", objective: "Wahrscheinlichkeiten begründen und auf neue Situationen anwenden." });
+	const demoGoal = demo.body.result.goalId;
+	const richPrompt = "## Verstehen, anwenden, behalten\n\n**Ein klarer Gedanke:** Neues Wissen wird durch Anwendung überprüft. _Ein Schritt nach dem anderen._\n\n> [!IMPORTANT]\n> Erkläre deine Überlegung und prüfe sie an einem neuen Beispiel.\n\n```ts\nconst lernziel = { thema: \"Bayes\", verstanden: true };\n```\n\n```mermaid\ngraph LR\n  A[Verstehen] --> B[Anwenden] --> C[Wiederholen]\n```\n\nWie würdest du deinen Lösungsweg überprüfen?";
+	const demoCheck = await api("add_check", { goalId: demoGoal, prompt: richPrompt, kind: "transfer", answerMode: "rubric", answer: "Begründe die Annahmen und prüfe ein unabhängiges Beispiel.", source: "Synthetic theme-preview fixture; no learner assessment." });
+	await api("approve_key", { checkId: demoCheck.body.result.checkId, confirmed: true });
+	await api("start_review", { goalId: demoGoal });
+	await page.goto(`${url}/review`, { waitUntil: "domcontentloaded" });
+	await contains("Verstehen, anwenden, behalten");
+	await page.waitForSelector('svg[aria-roledescription="flowchart-v2"], [data-testid="md-mermaid"] svg', { timeout: 30000 });
+	await page.evaluate(async () => {
+		await Promise.all(['16px "Hack Nerd Font"', '700 16px "Hack Nerd Font"', 'italic 16px "Hack Nerd Font"', 'italic 700 16px "Hack Nerd Font"'].map(font => document.fonts.load(font)));
+	});
+	assert.ok((await page.$eval(".lh-prose", el => getComputedStyle(el).fontFamily)).includes("Hack Nerd Font"));
+	const session = await page.createCDPSession();
+	await session.send("DOM.enable"); await session.send("CSS.enable");
+	const documentNode = await session.send("DOM.getDocument");
+	const paragraph = await session.send("DOM.querySelector", { nodeId: documentNode.root.nodeId, selector: ".lh-prose p" });
+	const platformFonts = await session.send("CSS.getPlatformFontsForNode", { nodeId: paragraph.nodeId });
+	assert.ok(platformFonts.fonts.some(font => font.familyName.includes("Hack") && font.isCustomFont), "Chrome is drawing with the bundled font, not a fallback");
+	await page.screenshot({ path: path.join(artifacts, "rose-pine-moon-learning.png") });
+	await page.goto(`${url}/chat/new`, { waitUntil: "domcontentloaded" });
+	await page.waitForSelector('[data-testid="setup-cta"], textarea');
+	await page.screenshot({ path: path.join(artifacts, "rose-pine-moon-new-session.png") });
+	await page.click('[aria-label="Open sidebar"]');
+	await page.waitForFunction(() => document.querySelector("aside")?.getBoundingClientRect().width >= 280);
+	await page.click('[data-testid="settings-entry"]');
+	await page.waitForSelector('[data-testid="settings-nav-appearance"]', { visible: true });
+	await page.click('[data-testid="settings-nav-appearance"]');
+	await contains("Hack Nerd Font");
+	await page.screenshot({ path: path.join(artifacts, "rose-pine-moon-settings.png") });
 	assert.deepEqual(errors, [], "no browser runtime errors");
 	fs.writeFileSync(path.join(artifacts, "result.json"), JSON.stringify({
 		passed: true, syntheticData: true, browser: await browser.version(), viewports: [1440, ...narrowWidths],
-		checks: ["goal creation", "question creation", "source/key confirmation", "blind answer", "deterministic grading", "disk persistence", "reload", "hint contamination", "idempotent submission", "preferences", "invalid input", "evaluation export", "responsive widths", "supported dark theme", "keyboard activation and visible focus", "browser runtime errors"],
+		theme,
+		checks: ["bundled Hack font and Moon palette", "goal creation", "question creation", "source/key confirmation", "blind answer", "deterministic grading", "disk persistence", "reload", "hint contamination", "idempotent submission", "preferences", "invalid input", "evaluation export", "responsive widths", "supported dark theme", "keyboard activation and visible focus", "browser runtime errors"],
 	}, null, 2));
 	console.log("PASS: Review UI → API → isolated disk → restored UI. Screenshots and result.json saved.");
 } catch (error) {

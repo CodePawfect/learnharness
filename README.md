@@ -47,6 +47,10 @@ Run `npm ci` once if dependencies are missing. Stop the server with **Ctrl+C** i
 
 Windows uses `%APPDATA%/LearnHarness`; Linux uses `$XDG_DATA_HOME/LearnHarness` or `~/.local/share/LearnHarness`. Explicit shell `LH_DATA_DIR` and `LH_AUTH_FILE` overrides remain supported. The launcher does not move or merge existing records from another location. Ordinary `npm run dev` retains its original checkout-local defaults. For a production server, build once with `npm run build`, then use `npm start` with explicit `LH_DATA_DIR` and `LH_AUTH_FILE` pointing to the same folder.
 
+## Appearance
+
+The fork uses **Rosé Pine Moon** with locally bundled **Hack Nerd Font** (regular, bold, italic, and bold italic), including the font's Nerd glyphs. UI, prose, code, and diagrams share the theme; math keeps its specialized KaTeX fonts. No system-font installation or Google Fonts download is needed. Existing explicit appearance preferences remain editable under Settings → Appearance. Font licenses and version/source hashes are in `public/fonts/hack/`.
+
 ## How it works
 
 1. **Measure.** Before teaching, the agent finds where your understanding ends on each part the lesson depends on. Your answers, confidence, and thinking show it where to start.

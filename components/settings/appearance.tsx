@@ -20,7 +20,7 @@
  */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { FACTORY_SETTINGS, type AppearanceSettings } from "@/src/core";
+import { FACTORY_SETTINGS, ROSE_PINE_MOON, type AppearanceSettings } from "@/src/core";
 
 /** The resolved, fully-concrete appearance view (delta + factory merged). */
 export function resolveAppearance(delta: AppearanceSettings | undefined) {
@@ -39,8 +39,8 @@ export function resolveAppearance(delta: AppearanceSettings | undefined) {
 	};
 }
 
-/** One channel clamped on the dark curve: additive offsets matching today's
- *  hand-picked palette (#141414 → card #1c1c1c (+8) → accent #2a2a2a (+22)
+/** Custom-background fallback: additive offsets matching the legacy
+ *  palette (#141414 → card #1c1c1c (+8) → accent #2a2a2a (+22)
  *  → border #434343 (+47)) — the "per-mode derivation in code" the schema
  *  promises, as the thinnest curve that keeps the palette's relationships. */
 function raise(hex: string, add: number): string {
@@ -50,11 +50,19 @@ function raise(hex: string, add: number): string {
 	return `#${n.map((c) => Math.min(255, c + add).toString(16).padStart(2, "0")).join("")}`;
 }
 
-/** The derived palette a chosen background implies (dark curve): background
+/** The Moon base uses the exact shared palette. Other custom backgrounds use
+ *  the legacy dark curve: background
  *  itself, the raised surfaces (card/popover/secondary/muted, +8), the
  *  accent (+22), the edges (border/input, +47), and primary-foreground
  *  (the inverted text on primary = the background's own color, as today). */
 export function derivedPalette(background: string): Record<string, string> {
+	if (background.toLowerCase() === ROSE_PINE_MOON.base) {
+		return { "--background": background, "--card": ROSE_PINE_MOON.surface,
+			"--popover": ROSE_PINE_MOON.overlay, "--secondary": ROSE_PINE_MOON.overlay,
+			"--muted": ROSE_PINE_MOON.highlightLow, "--accent": ROSE_PINE_MOON.overlay,
+			"--border": ROSE_PINE_MOON.highlightHigh, "--input": ROSE_PINE_MOON.subtle,
+			"--primary-foreground": ROSE_PINE_MOON.base };
+	}
 	const card = raise(background, 8);
 	const accent = raise(background, 22);
 	const border = raise(background, 47);
@@ -78,15 +86,13 @@ export function appearanceVars(a: ReturnType<typeof resolveAppearance>): Record<
 	const vars: Record<string, string> = {};
 	if (a.background !== null) Object.assign(vars, derivedPalette(a.background));
 	if (a.fontFamily !== null) {
-		vars["--font-prose"] = `"${a.fontFamily}", var(--font-sans3), ui-sans-serif, system-ui, sans-serif`;
+		vars["--font-prose"] = `"${a.fontFamily}", var(--font-hack), ui-monospace, monospace`;
 	}
 	// The ONE documented reading-size variable (typography round 4): prose,
 	// inputs, and session titles all read it, so one setProperty moves them.
 	vars["--lh-prose-size"] = `${a.proseFontSize}px`;
-	// Session names: CMU Serif by default; the toggle swaps the title font
-	// to the prose family — covers chat.tsx + new-session.tsx titles with
-	// zero component edits (they use the .font-title utility).
-	if (!a.sessionNameSerif) vars["--font-title"] = "var(--font-prose)";
+	// Hack is the default; an explicit serif preference remains supported.
+	vars["--font-title"] = a.sessionNameSerif ? '"lh-cmu", serif' : "var(--font-prose)";
 	// Markdown rendering: heading weight + the emphasis inks (the vars
 	// were built "ready for the settings UI").
 	vars["--lh-heading-weight"] = String(a.mdRendering.headingWeight);

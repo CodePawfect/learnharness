@@ -82,3 +82,5 @@ export * from "./coverage.ts";
 // export share it. Pure, browser-safe.
 export * from "./session-markdown.ts";
 export * from "./learning.ts";
+
+export * from "./theme.ts";

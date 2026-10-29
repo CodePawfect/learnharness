@@ -23,16 +23,16 @@
  * it). In a plain dev browser the API is absent → a small curated list
  * + a footer that says exactly that — never a fabricated system list.
  * The custom-family input inside the menu is the manual escape path.
- * Empty/unset keeps meaning Source Sans 3.
+ * Empty/unset keeps meaning Hack Nerd Font.
  *
- * Emphasis inks (same wave): the factory tokens default to the regular
- * text color now (globals.css); the rows' empty-state labels say "same
- * as text".
+ * Emphasis inks use Moon rose and iris by default; explicit hex overrides
+ * remain available.
  */
 
 import { useEffect, useRef, useState } from "react";
 import {
 	EXTRACTION_CHUNK_TOKENS_FLOOR,
+	DEFAULT_READING_FONT,
 	resolveSettings,
 	type AppearanceSettings,
 	type GraphSettings,
@@ -45,7 +45,7 @@ import { CommitInput, SettingsMenuTrigger, SettingsRow, ThinSelect, Toggle } fro
 
 /** The factory reading family — the DEFAULT row's identity (unset =
  *  this). Exported for tests. */
-export const DEFAULT_READING_FONT = "Source Sans 3";
+export { DEFAULT_READING_FONT } from "@/src/core";
 
 /** The dev-browser fallback list (queryLocalFonts is absent there):
  *  the app's own knowns plus a handful of ubiquitous macOS families,
@@ -78,7 +78,7 @@ function localFontsApi(): LocalFontsApi | null {
 }
 
 /** Compose the reading-font pick: null (or blank) = the factory
- *  Source Sans 3; otherwise the family verbatim (trimmed — the
+ *  Hack Nerd Font; otherwise the family verbatim (trimmed — the
  *  sanitizer trims again server-side). Pure — exported for tests. */
 export function composeFontFamily(
 	appearance: AppearanceSettings | undefined,
@@ -193,12 +193,12 @@ export function AppearanceSection({
 			</SettingsRow>
 			<SettingsRow
 				label="Background"
-				hint={`Empty = ${resolved.background ?? "#141414"}`}
+				hint={`Empty = ${resolved.background ?? "#232136"}`}
 				testid="row-background"
 			>
 				<CommitInput
 					value={appearance?.background ?? ""}
-					placeholder="#141414"
+					placeholder="#232136"
 					ariaLabel="background hex"
 					testid="input-background"
 					onCommit={(v) => onSectionChange({ ...appearance, background: v === "" ? null : v })}
@@ -283,7 +283,7 @@ export function AppearanceSection({
 			</SettingsRow>
 			<SettingsRow label="Session names in serif" testid="row-session-serif">
 				<Toggle
-					checked={appearance?.sessionNameSerif ?? true}
+					checked={resolved.sessionNameSerif}
 					label="session names serif"
 					onChange={(on) => onSectionChange({ ...appearance, sessionNameSerif: on })}
 				/>
@@ -292,7 +292,7 @@ export function AppearanceSection({
 				<CommitInput
 					type="number"
 					value={String(md?.headingWeight ?? "")}
-					placeholder="900"
+					placeholder="700"
 					ariaLabel="heading weight"
 					testid="input-heading-weight"
 					onCommit={(v) => {
@@ -311,22 +311,20 @@ export function AppearanceSection({
 					}}
 				/>
 			</SettingsRow>
-			{/* The emphasis inks default to the REGULAR TEXT COLOR now
-			    (appearance wave, 2026-09-26) — the empty-state labels say
-			    so; explicit hex overrides ride unchanged. */}
-			<SettingsRow label="Bold color" hint="Empty = same as text" testid="row-bold-color">
+			{/* Empty values use Moon's rose / iris emphasis colors. */}
+			<SettingsRow label="Bold color" hint="Empty = theme rose" testid="row-bold-color">
 				<CommitInput
 					value={md?.boldColor ?? ""}
-					placeholder="same as text"
+					placeholder="#ea9a97"
 					ariaLabel="bold color"
 					testid="input-bold-color"
 					onCommit={(v) => onSectionChange({ ...appearance, mdRendering: { ...md, boldColor: v === "" ? null : v } })}
 				/>
 			</SettingsRow>
-			<SettingsRow label="Italic color" hint="Empty = same as text" testid="row-italic-color">
+			<SettingsRow label="Italic color" hint="Empty = theme iris" testid="row-italic-color">
 				<CommitInput
 					value={md?.italicColor ?? ""}
-					placeholder="same as text"
+					placeholder="#c4a7e7"
 					ariaLabel="italic color"
 					testid="input-italic-color"
 					onCommit={(v) => onSectionChange({ ...appearance, mdRendering: { ...md, italicColor: v === "" ? null : v } })}
