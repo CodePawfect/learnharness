@@ -399,7 +399,10 @@ export class SessionModel {
 					// start+end only, no streaming partials). Without this the
 					// live stream dropped the marker until the settle sync.
 					const mid = message.id;
-					if (mid === undefined) return false;
+					// The write-ahead record can arrive before the stream, or
+					// between start and end. Once durable, its copy owns the id;
+					// replaying that event must not recreate a live-tail copy.
+					if (mid === undefined || this.base.some((m) => m.id === mid)) return false;
 					this.mutate(() => {
 						const idx = this.tail.findIndex((m) => m.id === mid);
 						this.tail =
@@ -925,8 +928,9 @@ export class SessionModel {
 	 * Append-only adoption (the mid-turn steer/artifact ground rule): swap
 	 * in the record — every current base message must still be present
 	 * (the server appends only) — keeping the live tail, minus the
-	 * optimistic entries the record has absorbed (their server-stamped
-	 * copies just landed; without this the input bubble would double).
+	 * entries already present by id and optimistic entries the record has
+	 * absorbed by content. Stable-id markers can arrive through both the
+	 * stream and the write-ahead record, in either order.
 	 */
 	adoptRecord(record: LhMessage[]): void {
 		const recordIds = new Set(record.map((m) => (m as { id?: string }).id));
@@ -935,7 +939,7 @@ export class SessionModel {
 		this.mutate(() => {
 			this.base = record;
 			this.forgetResolvedDrafts(record);
-			this.tail = this.tail.filter((m) => !absorbed(m, record));
+			this.tail = this.tail.filter((m) => !recordIds.has(m.id) && !absorbed(m, record));
 		});
 	}
 

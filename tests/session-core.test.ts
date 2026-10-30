@@ -24,7 +24,7 @@ import { afterEach, describe, it } from "node:test";
 import { absorbed, pendingCallTool, SessionModel } from "../components/session-core.ts";
 import type { ChatInput } from "../src/core/input-events.ts";
 import type { LhMessage } from "../src/core/native-messages.ts";
-import { newUserMessage, newAnswerResult, newThinkingMessage, needsContinuation, endsInDismissal } from "../src/core/native-messages.ts";
+import { newUserMessage, newAnswerResult, newThinkingMessage, newHandoffMessage, needsContinuation, endsInDismissal } from "../src/core/native-messages.ts";
 import { endsInFailedTurn, newCompactionMarker, newPlanBlockMessage, projectView } from "../src/core/index.ts";
 import { dismissedAnswer } from "../src/core/question-core.ts";
 import { buildAnswer, type QuestionData } from "../src/core/question-core.ts";
@@ -1335,6 +1335,43 @@ function userText(id: string, text: string): LhMessage {
 }
 
 describe("adoptRecord — append-only adoption", () => {
+	for (const order of ["record-first", "between-start-and-end", "stream-first"] as const) {
+		it(`keeps a probe handoff unique when adoption is ${order}`, () => {
+			const topic = userText("u1", "topic");
+			const handoff = newHandoffMessage("chat_x");
+			const record = [topic, handoff];
+			const m = model({ initialMessages: [topic] });
+			const assertUnique = () => {
+				const state = m.getState();
+				assert.equal(state.nativeMessages.filter(message => message.id === handoff.id).length, 1);
+				assert.equal(state.messages.filter(message => message.id === handoff.id).length, 1);
+			};
+			if (order === "record-first") m.adoptRecord(record);
+			m.applyWireEvent({ type: "message_start", message: handoff });
+			assertUnique();
+			if (order === "between-start-and-end") m.adoptRecord(record);
+			assertUnique();
+			m.applyWireEvent({ type: "message_end", message: handoff });
+			assertUnique();
+			if (order === "stream-first") m.adoptRecord(record);
+			assertUnique();
+			// Replaying a buffered stream after adoption must remain idempotent.
+			m.applyWireEvent({ type: "message_start", message: handoff });
+			m.applyWireEvent({ type: "message_end", message: handoff });
+			m.adoptRecord(record);
+			assertUnique();
+			// Distinct handoffs must never be collapsed by marker content.
+			const next = newHandoffMessage("chat_other");
+			m.applyWireEvent({ type: "message_start", message: next });
+			assert.equal(m.getState().nativeMessages.length, 3);
+			// Adoption must preserve the assistant's unfinished streaming slot.
+			m.applyWireEvent({ type: "message_start", message: { role: "assistant", content: [{ type: "text", text: "planning" }] } });
+			m.adoptRecord([...record, next]);
+			assert.equal(m.getState().nativeMessages.length, 4);
+			assert.equal(m.getState().messages.at(-1)!.parts.at(-1)!.text, "planning");
+		});
+	}
+
 	it("splices a server-added steer between the record and the live tail", () => {
 		const m = model({ initialMessages: [userText("u1", "topic")] });
 		m.applyWireEvent({ type: "message_start", message: { role: "assistant", content: [{ type: "text", text: "streaming" }] } });
