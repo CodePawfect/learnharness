@@ -27,82 +27,94 @@
 	outline: none;
 }
 
-/* Palette (owner's hexes): main #141414, raised #1C1C1C, edges #434343.
-   Mono chrome = JetBrains Mono; prose = Source Sans 3; titles = CMU Serif. */
-:root {
-	color-scheme: dark;
-	--radius: 8px;
-	--background: #141414;
-	--foreground: #e6e6e6;
-	--card: #1c1c1c;
-	--card-foreground: #e6e6e6;
-	--popover: #1c1c1c;
-	--popover-foreground: #e6e6e6;
-	--primary: #e6e6e6;
-	--primary-foreground: #141414;
-	--secondary: #1c1c1c;
-	--secondary-foreground: #e6e6e6;
-	--muted: #1c1c1c;
-	--muted-foreground: #8d8d8d;
-	--accent: #2a2a2a;
-	--accent-foreground: #e6e6e6;
-	--destructive: oklch(0.704 0.191 22.216);
-	--border: #434343;
-	--input: #434343;
-	--ring: #8d8d8d;
-	/* Emphasis inks default to the REGULAR TEXT COLOR (owner ruling,
-	   appearance wave 2026-09-26 — the old #ee928c/#6fa9d6 factory
-	   emphasis colors are gone). Explicit overrides land via the
-	   appearance settings vars. */
-	--lh-ink-strong: var(--foreground);
-	--lh-ink-italic: var(--foreground);
-	/* THE READING SIZE = the ladder's 16px rung (--text-lg). Can't be
-	   var()-linked: @theme inline inlines literals into utilities without
-	   emitting runtime vars — so this is the one documented duplication:
-	   change one, change both. (owner, typography round 4: snapped from
-	   the reskin's hand-tuned 16.5 to the ladder's 16.) */
-	--lh-prose-size: 16px;
-	--lh-prose-leading: 1.5;
-	/* Markdown heading weight (appearance settings; 900 = the Black cut). */
-	--lh-heading-weight: 900;
+/* Review is a keyboard-operable work surface. Keep its focus visible without
+   changing the interaction styling of the existing classroom or graph. */
+.lh-learning :focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: 3px;
 }
 
-/* The app is always dark (<html class="dark">); mirror the same values so
-   the block stays coherent under Tailwind's variant. */
+/* Rosé Pine Moon. Locally bundled Hack Nerd Font covers UI, prose and code.
+   Secondary text is 75% subtle + 25% text (#a4a1bd), so it stays readable
+   on the overlay surface as well as the base. Muted remains decorative. */
+:root,
 .dark {
-	--background: #141414;
-	--foreground: #e6e6e6;
-	--card: #1c1c1c;
-	--card-foreground: #e6e6e6;
-	--popover: #1c1c1c;
-	--popover-foreground: #e6e6e6;
-	--primary: #e6e6e6;
-	--primary-foreground: #141414;
-	--secondary: #1c1c1c;
-	--secondary-foreground: #e6e6e6;
-	--muted: #1c1c1c;
-	--muted-foreground: #8d8d8d;
-	--accent: #2a2a2a;
-	--accent-foreground: #e6e6e6;
-	--destructive: oklch(0.704 0.191 22.216);
-	--border: #434343;
-	--input: #434343;
-	--ring: #8d8d8d;
-	/* Same emphasis ruling as the block above: unset = text color. */
-	--lh-ink-strong: var(--foreground);
-	--lh-ink-italic: var(--foreground);
-	/* THE READING SIZE = the ladder's 16px rung (--text-lg). Can't be
-	   var()-linked: @theme inline inlines literals into utilities without
-	   emitting runtime vars — so this is the one documented duplication:
-	   change one, change both. (owner, typography round 4: snapped from
-	   the reskin's hand-tuned 16.5 to the ladder's 16.) */
+	color-scheme: dark;
+	--rp-base: #232136;
+	--rp-surface: #2a273f;
+	--rp-overlay: #393552;
+	--rp-muted: #6e6a86;
+	--rp-subtle: #908caa;
+	--rp-text: #e0def4;
+	--rp-love: #eb6f92;
+	--rp-gold: #f6c177;
+	--rp-rose: #ea9a97;
+	--rp-pine: #3e8fb0;
+	--rp-foam: #9ccfd8;
+	--rp-iris: #c4a7e7;
+	--rp-highlight-low: #2a283e;
+	--rp-highlight-med: #44415a;
+	--rp-highlight-high: #56526e;
+	--radius: 8px;
+	--font-hack: "Hack Nerd Font";
+	--background: var(--rp-base);
+	--foreground: var(--rp-text);
+	--card: var(--rp-surface);
+	--card-foreground: var(--rp-text);
+	--popover: var(--rp-overlay);
+	--popover-foreground: var(--rp-text);
+	--primary: var(--rp-rose);
+	--primary-foreground: var(--rp-base);
+	--secondary: var(--rp-overlay);
+	--secondary-foreground: var(--rp-text);
+	--muted: var(--rp-highlight-low);
+	--muted-foreground: #a4a1bd;
+	--accent: var(--rp-overlay);
+	--accent-foreground: var(--rp-text);
+	--destructive: var(--rp-love);
+	--border: var(--rp-highlight-high);
+	--input: var(--rp-subtle);
+	--ring: var(--rp-iris);
+	--lh-ink-strong: var(--rp-rose);
+	--lh-ink-italic: var(--rp-iris);
 	--lh-prose-size: 16px;
-	--lh-prose-leading: 1.5;
-	/* Markdown heading weight (appearance settings; 900 = the Black cut). */
-	--lh-heading-weight: 900;
+	--lh-prose-leading: 1.65;
+	--lh-heading-weight: 700;
 }
 
-/* CMU Serif bold (titles) — bundled local file, no CDN dependency. */
+@font-face {
+	font-family: "Hack Nerd Font";
+	src: url("/fonts/hack/HackNerdFont-Regular.woff2") format("woff2");
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Hack Nerd Font";
+	src: url("/fonts/hack/HackNerdFont-Bold.woff2") format("woff2");
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Hack Nerd Font";
+	src: url("/fonts/hack/HackNerdFont-Italic.woff2") format("woff2");
+	font-weight: 400;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Hack Nerd Font";
+	src: url("/fonts/hack/HackNerdFont-BoldItalic.woff2") format("woff2");
+	font-weight: 700;
+	font-style: italic;
+	font-display: swap;
+}
+
+/* Optional existing serif preference remains available; Hack is the default. */
 @font-face {
 	font-family: "lh-cmu";
 	src: url("/fonts/cmunbx.ttf") format("truetype");
@@ -112,16 +124,11 @@
 }
 
 @theme inline {
-	/* Fonts: chrome = JetBrains Mono, prose = Source Sans 3, titles = CMU
-	   Serif bold. The JetBrains/SourceSans variables attach in app/layout.tsx.
-	   (owner, typography round) The Tailwind defaults are ALIASED to the app
-	   fonts: `font-mono`/`font-sans` utilities would otherwise fall to the
-	   SYSTEM stacks — a fourth font the app never chose — and streamdown's
-	   code-block chrome + mermaid-error + demo-card all use them. */
-	--font-ui: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
-	--font-prose: var(--font-sans3), ui-sans-serif, system-ui, sans-serif;
-	--font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
-	--font-sans: var(--font-sans3), ui-sans-serif, system-ui, sans-serif;
+	/* All text roles use locally bundled Hack; math retains KaTeX fonts. */
+	--font-ui: var(--font-hack), ui-monospace, SFMono-Regular, monospace;
+	--font-prose: var(--font-hack), ui-monospace, SFMono-Regular, monospace;
+	--font-mono: var(--font-hack), ui-monospace, SFMono-Regular, monospace;
+	--font-sans: var(--font-hack), ui-monospace, SFMono-Regular, monospace;
 	/* The modular type ladder — each size carries its own line-height.
 	   Component sizes must pull from this ladder. (owner, typography
 	   round 4: the 10px rung is merged into 11 — one pixel apart was a
@@ -170,13 +177,27 @@
 	--color-accent: var(--accent);
 	--color-accent-foreground: var(--accent-foreground);
 	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--rp-base);
+	--color-success: var(--rp-foam);
+	--color-warning: var(--rp-gold);
+	/* Existing status utilities share the theme's semantic accents. */
+	--color-red-300: var(--rp-love);
+	--color-red-400: var(--rp-love);
+	--color-red-500: var(--rp-love);
+	--color-red-600: var(--rp-love);
+	--color-green-400: var(--rp-foam);
+	--color-green-500: var(--rp-foam);
+	--color-green-600: var(--rp-pine);
+	--color-amber-400: var(--rp-gold);
+	--color-amber-500: var(--rp-gold);
+	--color-yellow-400: var(--rp-gold);
 	--color-border: var(--border);
 	--color-input: var(--input);
 	--color-ring: var(--ring);
 }
 
-* {
-	border-color: var(--color-border);
+@layer base {
+	* { border-color: var(--color-border); }
 }
 
 body {
@@ -186,7 +207,7 @@ body {
 }
 
 /* Teaching prose (the markdown renderer's container gets .lh-prose):
-   Source Sans 3 with the size/leading tokens; emphasis color bound to
+   Hack Nerd Font with the size/leading tokens; emphasis color bound to
    the settings-ready tokens. */
 .lh-prose {
 	font-family: var(--font-prose);
@@ -194,14 +215,9 @@ body {
 	line-height: var(--lh-prose-leading);
 }
 
-/* Session-name weight (owner, fix wave round 3): with the serif toggle
-   OFF, --font-title resolves to the prose font — Source Sans 3 is loaded
-   as a VARIABLE font, and without an explicit weight the titles render at
-   400, a whisper next to CMU's bold-only face. Request 900: the variable
-   font takes it, and CMU (a single 700 face) snaps to its nearest
-   available weight — the same rendering it already had. */
+/* Hack ships a real bold face; do not synthesize an unavailable black weight. */
 .font-title {
-	font-weight: 900;
+	font-weight: 700;
 }
 
 .lh-prose :where(strong, b) {
@@ -556,11 +572,9 @@ body {
 	max-width: max(0px, calc(100% - 5.5rem - var(--lh-wco-right, 0px)));
 }
 
-/* --font-title deliberately NOT @theme inline (see comment above): the
-   session-name-serif toggle overrides this var at runtime, so the
-   .font-title utility must read it through var(), not carry a baked copy. */
+/* Runtime title token preserves the optional serif preference. */
 @theme {
-	--font-title: "lh-cmu", serif;
+	--font-title: var(--font-hack), ui-monospace, monospace;
 }
 
 /* Card enter (owner round, 2026-10-05): the transcript cards' one-shot
@@ -598,3 +612,5 @@ body {
 	outline: 1px solid var(--border);
 	border-radius: 0.25rem;
 }
+
+::selection { background: var(--rp-highlight-med); color: var(--rp-text); }

@@ -22,6 +22,35 @@ Instead of just giving you an explanation, it uses your answers and thinking to 
 
 ![LearnHarness teaching session](docs/assets/teaching-session.png)
 
+## CodePawfect fork: evidence and delayed review
+
+This fork adds a **Review** workspace with persistent learning goals, source-checked answer keys, independent application tasks, tutor observations linked to learner messages, and a due queue. Teaching preferences apply to the next tutor turn. Existing chats and the content graph remain compatible.
+
+A graph node records what was covered. The separate learning history records what was attempted, with what help, how it was checked, and when. Demonstrated/retained labels require delayed, unaided answers to distinct checked questions; self-assessed projects and model judgments remain separately labeled. The interval schedule is a transparent heuristic, not a validated prediction of memory.
+
+Open **Review** in the sidebar, create a measurable goal (or ask the tutor to propose one), check its answer keys against the cited references, and start a due review. Review works without a model connection; tutoring still uses your configured providers. No background notifications are scheduled.
+
+See [the fork's learning design and operations](docs/evidence-based-learning.md) and [the evaluation protocol](docs/learning-evaluation.md). Export evidence from Review and run `npm run evaluate:learning -- /path/to/export.json` for descriptive delayed-transfer results. No learning-outcome benefit has yet been established by a controlled study.
+
+### Easy local start
+
+On macOS, double-click **Start.command** in the repository. It starts LearnHarness and opens your browser when the server is ready. Double-click **Daten.command** to open your saved-learning folder in Finder.
+
+From a terminal, the equivalent commands are:
+
+```sh
+npm run local    # start with persistent storage
+npm run data     # open the saved-learning folder
+```
+
+Run `npm ci` once if dependencies are missing. Stop the server with **Ctrl+C** in its terminal window; saved learning remains. Each launch prints the browser address and storage location. On macOS the stable default is `~/Library/Application Support/LearnHarness`, matching the earlier manual startup instructions. Chats, graph, settings, prompt overrides, `learning.json`, and provider keys entered in the app are kept there. Back up the entire folder securely. `npm run local -- --show-path` prints the location without starting anything.
+
+Windows uses `%APPDATA%/LearnHarness`; Linux uses `$XDG_DATA_HOME/LearnHarness` or `~/.local/share/LearnHarness`. Explicit shell `LH_DATA_DIR` and `LH_AUTH_FILE` overrides remain supported. The launcher does not move or merge existing records from another location. Ordinary `npm run dev` retains its original checkout-local defaults. For a production server, build once with `npm run build`, then use `npm start` with explicit `LH_DATA_DIR` and `LH_AUTH_FILE` pointing to the same folder.
+
+## Appearance
+
+The fork uses **Rosé Pine Moon** with locally bundled **Hack Nerd Font** (regular, bold, italic, and bold italic), including the font's Nerd glyphs. UI, prose, code, and diagrams share the theme; math keeps its specialized KaTeX fonts. No system-font installation or Google Fonts download is needed. Existing explicit appearance preferences remain editable under Settings → Appearance. Font licenses and version/source hashes are in `public/fonts/hack/`.
+
 ## How it works
 
 1. **Measure.** Before teaching, the agent finds where your understanding ends on each part the lesson depends on. Your answers, confidence, and thinking show it where to start.

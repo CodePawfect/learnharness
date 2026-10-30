@@ -21,7 +21,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ModelCatalogEntry } from "@/src/core";
-import { fuzzyScore, subscriptionLabel } from "@/src/core";
+import { DEFAULT_READING_FONT, fuzzyScore, subscriptionLabel } from "@/src/core";
 import { formatTokens } from "@/components/usage-format";
 import { SearchMenuList } from "./search-menu-list";
 
@@ -224,7 +224,7 @@ export function ProviderMenuList({
 /** The reading-font dropdown's row set — the SAME fuzzy + arrow-walk +
  *  Enter machine over font families (appearance wave, 2026-09-26). The
  *  DEFAULT row (null) is a candidate like any family: it matches empty
- *  and "source"/"sans"/"default" queries, so an unfiltered list opens
+ *  and "hack"/"nerd"/"default" queries, so an unfiltered list opens
  *  with the default first and a searched list drops it honestly — Enter
  *  can never pick a row that isn't on screen. Pure — exported for
  *  tests. */
@@ -236,7 +236,7 @@ export function fontMenuResults(query: string, families: string[]): Array<string
 		.map((r) => r.f);
 	// The default row's searchable identity: the factory family + the
 	// word "default" (the suffix it renders with).
-	const defaultScore = fuzzyScore(query, "Source Sans 3", "default");
+	const defaultScore = fuzzyScore(query, DEFAULT_READING_FONT, "default");
 	if (query.trim() === "" || defaultScore !== null) return [null, ...scored];
 	return scored;
 }
@@ -267,7 +267,7 @@ export function FontMenuList({
 	/** Enumerated font families (already deduped/sorted by the caller);
 	 *  undefined while the enumeration runs. */
 	families: string[] | undefined;
-	/** The stored override (null = the factory Source Sans 3). */
+	/** The stored override (null = the factory Hack Nerd Font). */
 	effectiveFamily: string | null;
 	/** Receives the pick: a family string, or null for the default. */
 	onPick: (family: string | null) => void;
@@ -343,7 +343,7 @@ export function FontMenuList({
 										i === menuIdx ? "bg-accent/40 ring-1 ring-inset ring-border" : ""
 									}${effective && i !== menuIdx ? " bg-muted/60" : ""}`}
 								>
-									<span className="truncate text-card-foreground">{family ?? "Source Sans 3"}</span>
+									<span className="truncate text-card-foreground">{family ?? DEFAULT_READING_FONT}</span>
 									<span className="shrink-0 text-muted-foreground">{isDefault ? "default" : effective && <span aria-hidden>✓</span>}</span>
 								</button>
 							</li>

@@ -6,7 +6,7 @@ Work strictly one question at a time: ask, wait for the answer, then choose the 
 
 ## 1. Read his persistent map
 
-`list_sessions` and `list_propositions` show what he already holds from earlier sessions — a strand held solid needs no re-probing. If the tools aren't there, the map is off — just probe.
+`list_sessions` and `list_propositions` show what earlier sessions covered, not what the learner retained. Read `learning_status` for dated performance evidence and known misconceptions. Use a brief diagnostic when evidence is stale, uncertain, or absent; do not equate a graph node with mastery. If tools are unavailable, probe directly.
 
 ## 2. Make the goal concrete — `ask_user_question`
 
@@ -26,7 +26,7 @@ The edge of a strand is found by bracketing: something he reliably gets **right*
 - Correct but hesitant (low confidence, thin thinking) → fragile: step up gently and characterize the shakiness.
 - Wrong → the ceiling drops; narrow back in to pin exactly where it sits.
 - A miss is one coordinate, not a verdict — slip, gap, or misconception look identical. Probe around it. Misconceptions matter most: dig into their extent before moving on.
-- A strand that never breaks is not done — escalate until it does.
+- Stop once the evidence brackets the prerequisites relevant to the agreed goal. Do not escalate beyond scope merely to force a failure.
 
 Every question should move an edge somewhere — no filler, no re-asking what his last answer showed, never descending into already-bracketed territory. Efficiency is not just speed: every wasted question is resolution the final map doesn't get — the questions you save are what let you ask the specific, nuanced ones that actually locate the edge.
 

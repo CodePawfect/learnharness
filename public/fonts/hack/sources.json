@@ -1,0 +1,22 @@
+{
+  "HackNerdFont-Regular": {
+    "source": "https://raw.githubusercontent.com/ryanoasis/nerd-fonts/v3.5.1/patched-fonts/Hack/HackNerdFont-Regular.ttf",
+    "sha256": "8cba545f0ab36d8f313a448676df9988d6c679a014ffed863e52305844e7b113",
+    "woff2_bytes": 1129316
+  },
+  "HackNerdFont-Bold": {
+    "source": "https://raw.githubusercontent.com/ryanoasis/nerd-fonts/v3.5.1/patched-fonts/Hack/HackNerdFont-Bold.ttf",
+    "sha256": "add70efb723227c08400c4d0f0068cf9f1783e22f6702b811bafbf3f5920902c",
+    "woff2_bytes": 1130912
+  },
+  "HackNerdFont-Italic": {
+    "source": "https://raw.githubusercontent.com/ryanoasis/nerd-fonts/v3.5.1/patched-fonts/Hack/HackNerdFont-Italic.ttf",
+    "sha256": "c54feb21d2296e112aea1867284343aef67173046b05e4446d700e1acc7aec9e",
+    "woff2_bytes": 1134616
+  },
+  "HackNerdFont-BoldItalic": {
+    "source": "https://raw.githubusercontent.com/ryanoasis/nerd-fonts/v3.5.1/patched-fonts/Hack/HackNerdFont-BoldItalic.ttf",
+    "sha256": "81f1b2b159e934f29c355814ce4f0e7bcbc3926a46a4c46da89f7e0bb7873ad9",
+    "woff2_bytes": 1136572
+  }
+}

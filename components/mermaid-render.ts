@@ -11,6 +11,7 @@
 
 import { createMermaidPlugin } from "@streamdown/mermaid";
 import type { MermaidConfig } from "mermaid";
+import { ROSE_PINE_MOON as moon } from "@/src/core";
 
 /** The chart's base font size (px) — mermaid sizes ALL text relative to
  *  this, so it's the number the display-width cap (md-blocks) divides by:
@@ -24,10 +25,18 @@ export const MERMAID_FONT_SIZE = 16;
 // mermaid's dark theme. (Moved from ai-elements/message.tsx when the
 // renderer became app-owned; the old `mermaid` prop wiring is retired.)
 export const mermaidTheme: MermaidConfig = {
-	fontFamily: "ui-sans-serif, system-ui, sans-serif",
+	fontFamily: '"Hack Nerd Font", ui-monospace, monospace',
 	fontSize: MERMAID_FONT_SIZE,
 	securityLevel: "strict",
-	theme: "dark",
+	theme: "base",
+	themeVariables: {
+		darkMode: true, background: moon.base, primaryColor: moon.surface,
+		primaryTextColor: moon.text, primaryBorderColor: moon.iris,
+		secondaryColor: moon.overlay, tertiaryColor: moon.highlightLow,
+		lineColor: moon.foam, textColor: moon.text, nodeTextColor: moon.text,
+		mainBkg: moon.surface, clusterBkg: moon.base, clusterBorder: moon.highlightHigh,
+		edgeLabelBackground: moon.base, titleColor: moon.rose,
+	},
 };
 
 const plugin = createMermaidPlugin();
