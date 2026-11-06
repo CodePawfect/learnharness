@@ -16,8 +16,9 @@ import { cjk } from "@streamdown/cjk";
 import { createCodePlugin } from "@streamdown/code";
 import { createMathPlugin } from "@streamdown/math";
 
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, ExternalLinkIcon, XIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
+import { createPortal } from "react-dom";
 import type { LhViewMessage } from "@/src/core";
 import {
   createContext,
@@ -26,11 +27,14 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import remarkBreaks from "remark-breaks";
 import {
   Streamdown,
+  defaultTranslations,
+  type LinkSafetyModalProps,
   type PluginConfig,
 } from "streamdown";
 import { mdComponents } from "@/components/md-blocks";
@@ -375,6 +379,15 @@ export const MessageResponse = memo(
         )}
         components={mdComponents}
         plugins={streamdownPlugins}
+        // Streamdown's default link-safety modal is rendered inline next to
+        // each Markdown link. When a link sits in a paragraph, the modal's
+        // div and paragraph become invalid descendants of that <p>, causing
+        // React hydration warnings. A portal keeps the same interaction in
+        // document.body while retaining the confirmation step.
+        linkSafety={{
+          enabled: true,
+          renderModal: renderMarkdownLinkSafetyModal,
+        }}
         {...props}
       >
         {content}
@@ -387,6 +400,120 @@ export const MessageResponse = memo(
 );
 
 MessageResponse.displayName = "MessageResponse";
+
+function renderMarkdownLinkSafetyModal(props: LinkSafetyModalProps) {
+  // Streamdown invokes renderModal during server rendering too. Keep the
+  // closed state absent from both trees and only touch document in the browser.
+  if (!props.isOpen || typeof document === "undefined") return null;
+  return createPortal(<MarkdownLinkSafetyModal {...props} />, document.body);
+}
+
+function MarkdownLinkSafetyModal({ isOpen, onClose, onConfirm, url }: LinkSafetyModalProps) {
+  const [copied, setCopied] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus();
+    };
+  }, [isOpen]);
+
+  const copyLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard access can be unavailable in browser contexts; opening the
+      // link remains available, matching Streamdown's default dialog.
+    }
+  }, [url]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-sm"
+      data-streamdown="link-safety-modal"
+      onClick={onClose}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.stopPropagation();
+          onClose();
+        } else if (event.key === "Tab") {
+          const buttons = dialogRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)");
+          if (!buttons?.length) return;
+          const first = buttons.item(0);
+          const last = buttons.item(buttons.length - 1);
+          if (!first || !last) return;
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }
+      }}
+      role="presentation"
+    >
+      <div
+        aria-describedby="streamdown-link-safety-description"
+        aria-labelledby="streamdown-link-safety-title"
+        aria-modal="true"
+        className="relative mx-4 flex w-full max-w-md flex-col gap-4 rounded-xl border bg-background p-6 shadow-lg"
+        onClick={(event) => event.stopPropagation()}
+        ref={dialogRef}
+        role="dialog"
+        tabIndex={-1}
+      >
+        <button
+          aria-label={defaultTranslations.close}
+          className="absolute top-4 right-4 rounded-md p-1 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+          onClick={onClose}
+          ref={closeButtonRef}
+          title={defaultTranslations.close}
+          type="button"
+        >
+          <XIcon size={16} />
+        </button>
+        <div className="flex flex-col gap-2">
+          <h2 className="flex items-center gap-2 text-lg font-semibold" id="streamdown-link-safety-title">
+            <ExternalLinkIcon size={20} />
+            {defaultTranslations.openExternalLink}
+          </h2>
+          <p className="text-sm text-muted-foreground" id="streamdown-link-safety-description">
+            {defaultTranslations.externalLinkWarning}
+          </p>
+        </div>
+        <div className="max-h-32 break-all overflow-y-auto rounded-md bg-muted p-3 font-mono text-sm">{url}</div>
+        <div className="flex gap-2">
+          <button
+            className="flex flex-1 items-center justify-center gap-2 rounded-md border bg-background px-4 py-2 text-sm font-medium transition-all hover:bg-muted"
+            onClick={copyLink}
+            type="button"
+          >
+            {copied ? <><CheckIcon size={14} /><span>{defaultTranslations.copied}</span></> : <><CopyIcon size={14} /><span>{defaultTranslations.copyLink}</span></>}
+          </button>
+          <button
+            className="flex flex-1 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90"
+            onClick={() => { onConfirm(); onClose(); }}
+            type="button"
+          >
+            <ExternalLinkIcon size={14} />
+            <span>{defaultTranslations.openLink}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /** Recovery is a tool-text presentation concern, not a shape/answer-data
  * transform. Ordinary assistant/user prose keeps MessageResponse unchanged. */
