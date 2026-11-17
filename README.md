@@ -32,6 +32,8 @@ Open **Review** in the sidebar, create a measurable goal (or ask the tutor to pr
 
 See [the fork's learning design and operations](docs/evidence-based-learning.md) and [the evaluation protocol](docs/learning-evaluation.md). Export evidence from Review and run `npm run evaluate:learning -- /path/to/export.json` for descriptive delayed-transfer results. No learning-outcome benefit has yet been established by a controlled study.
 
+**Flashcards** automatically builds a topic-organized study library from completed sections of current and existing lessons. Select one topic or mix several with a total card count, type your answers, and receive tutor feedback. Cards are available immediately; rounds, assessments, and per-card review dates persist locally. Partly completed paths contribute their finished sections while unanswered checks remain deferred. Your configured tutor connection is required for creation and assessment. Review's independently checked evidence remains separate.
+
 ### Easy local start
 
 On macOS, double-click **Start.command** in the repository. It starts LearnHarness and opens your browser when the server is ready. Double-click **Daten.command** to open your saved-learning folder in Finder.

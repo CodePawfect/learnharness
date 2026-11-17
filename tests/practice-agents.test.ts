@@ -244,12 +244,12 @@ describe("persistent practice nudges", () => {
 	const doctrine = readFileSync(new URL("../src/agent/prompts/practice/10-doctrine.md", import.meta.url), "utf8");
 	const normalizeWhitespace = (text: string) => text.replace(/\s+/g, " ").trim();
 	const approvedParagraphs = [
-		"- When a nudge does not land, reassess where the learner is stuck and offer only the next necessary piece of information. Do not jump to the full solution. Tentative answers, questions, and thinking aloud remain work in progress.",
-		"**On a wrong answer**, state the verdict plainly and localize the first break without giving the correction. Give the smallest nudge that lets the learner make the next move, then wait. If that nudge does not land, give another minimal nudge based on the new thinking. A failed attempt is never a reason to reveal the correction or conclude the problem. Continue until the learner finds and completes the correct solution.",
+		"- When a nudge does not land, reassess where the learner is stuck and offer only the next necessary piece of information. Use a direct explanation or worked step when requested or when repeated nudges are ineffective. Tentative answers, questions, and thinking aloud remain work in progress.",
+		"**On a wrong answer**, state the verdict plainly and identify the first break in the reasoning. Use a targeted nudge when the learner wants to keep trying; give an explanation or worked step when requested or when hints are not helping. Do not silently conclude the problem or count an assisted repair as an independent solution. The learner may explicitly end it.",
 		"Conclude when the learner has solved the problem correctly or explicitly asks to end it. Do not infer permission to end it from mistakes, elapsed time, the number of attempts, frustration, or an apparent inability to proceed.",
 	];
 
-	it("preserves the approved paragraphs in source and the effective default prompt", () => {
+	it("preserves adaptive support and learner-controlled ending in source and the effective default prompt", () => {
 		// Pin approved wording and Markdown, but allow incidental line wrapping.
 		for (const text of [doctrine, composeInstructions("practice")]) {
 			const paragraphs = text.split(/\n\s*\n|\n(?=- )/).map(normalizeWhitespace);
@@ -272,9 +272,9 @@ describe("persistent practice nudges", () => {
 		}
 	});
 
-	it("preserves the approved concluded-problem switch and unbounded structural repair in source and the effective default prompt", () => {
+	it("preserves target switching and repairs misconceptions with learner-appropriate support", () => {
 		const approvedDifficulty = "3. **Difficulty** — from the last outcomes on this target: clean success, one notch up; success that needed hints, hold; a miss, one notch down and consider dropping a mode. Two missed concluded problems in a row on this target: switch targets for the next demand. Never switch away from an active problem because of the number of attempts.";
-		const approvedClassification = "Classify every miss: cue miss (nothing came), discrimination error (wrong candidate won), execution slip (right proposition, wrong run), careless, or structural (the retrieved proposition is itself wrong — a misconception). The first four are practice information. Structural misses call for minimal nudges toward repairing the misconception, not an immediate correction or re-teaching. Keep each nudge surgical; do not impose a one-line or one-attempt limit on the repair as a whole.";
+		const approvedClassification = "Classify every miss: cue miss (nothing came), discrimination error (wrong candidate won), execution slip (right proposition, wrong run), careless, or structural (the retrieved proposition is itself wrong — a misconception). The first four are practice information. Structural misses need repair of the underlying assumption, using a nudge, explanation, or example suited to the learner's request and response. Record important gaps and later corrections through the shared learning tools.";
 		for (const text of [doctrine, composeInstructions("practice")]) {
 			const normalized = normalizeWhitespace(text);
 			assert.ok(normalized.includes(approvedDifficulty), "preserve the difficulty readout and exact approved switching rule");
@@ -286,8 +286,8 @@ describe("persistent practice nudges", () => {
 		}
 	});
 
-	it("preserves the approved misconception introduction without an affirmative one-line repair cap", () => {
-		const approvedIntroduction = "- **Not a teaching session.** You will find misconceptions. Address them with minimal, surgical nudges, over as many exchanges as needed. A practice session that drifts into re-teaching has stopped practicing.";
+	it("allows requested explanations while distinguishing assisted success from independent evidence", () => {
+		const approvedIntroduction = "- **Focused practice.** Start with targeted hints when useful. Honor requests for a direct explanation or worked example, and change support when repeated hints stop helping. Record the help honestly; assisted success is not independent evidence.";
 		for (const text of [doctrine, composeInstructions("practice")]) {
 			const normalized = normalizeWhitespace(text);
 			assert.ok(normalized.includes(approvedIntroduction), "preserve the exact approved introduction and the rest of the not-teaching bullet");
@@ -352,13 +352,13 @@ describe("practice prompt composition (own directory + the formatting appendix)"
 		assert.ok(!prompt.includes("exceptions, not habits"), "the rarely-needed framing is gone");
 		assert.ok(!prompt.includes("no research tool here"), "the stale line is gone");
 		// the thinking-fields doctrine composes into practice too (one law)
-		assert.match(prompt, /primary data/);
+		assert.match(prompt, /Read every submitted learner-authored field/);
 		// the teacher composes the same shared chunks (one law)
 		const teacher = composeInstructions("teacher");
 		assert.match(teacher, /one confidently-delivered hallucination poisons that/);
 		assert.match(teacher, /Everything in this section deletes a default/);
 		assert.match(teacher, /The bar is the doubt itself/);
-		assert.match(teacher, /primary data/);
+		assert.match(teacher, /Read every submitted learner-authored field/);
 		// the no-double-plan rule (owner-reported: plan drawn twice)
 		assert.match(teacher, /Never draw the plan again in your prose/);
 		// plan rewriting is normal, not exceptional (continuous adaptation)

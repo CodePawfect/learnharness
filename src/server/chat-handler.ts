@@ -46,6 +46,7 @@ import { registerTurn, rememberTurnFailure, unregisterTurn } from "./turn-runs.t
 import { persistTurn, triggerExtraction, TurnPersistenceError } from "./turn-service.ts";
 import { learningTools } from "../agent/tools/learning.ts";
 import { learningPromptContext } from "./learning.ts";
+import { triggerFlashcards } from "./flashcards.ts";
 import { hasProbeDone, danglingQuestionOf } from "../core/native-messages.ts";
 import { composeInstructions } from "../agent/teacher-agent.ts";
 import { ensureCompacted, kickCompaction, effectiveThresholdTokens } from "./compaction.ts";
@@ -268,7 +269,7 @@ export async function handleChatInput(
 				effective.compaction?.thresholdTokens,
 				catalogContextLimits().get(modelIdForCompaction),
 			),
-			systemPromptTokens: Math.ceil(composeInstructions(record.kind === "practice" ? "practice" : "teacher").length / 4),
+			systemPromptTokens: Math.ceil((composeInstructions(record.kind === "practice" ? "practice" : "teacher", effective.agent.prompts).length + learningPromptContext(chatId).length) / 4),
 		},
 		chatId,
 	);
@@ -435,7 +436,7 @@ export async function handleChatInput(
 		// prompt fresh per turn, swapping in any enabled override segments.
 		promptSwitches: effective.agent.prompts,
 		learningTools: learningTools({ store: stores.learningStore, chatStore: stores.chatStore, graphStore: stores.graphStore, chatId }),
-		learningContext: learningPromptContext(),
+		learningContext: learningPromptContext(chatId),
 	};
 	// PRACTICE BRANCH (owner design, 2026-10-04): a kind:"practice"
 	// session builds the practitioner from turn 1 — no prober→teacher
@@ -605,6 +606,7 @@ export async function handleChatInput(
 				// nothing must find the persisted record current — the same
 				// ordering rule as endTurn.
 				unregisterTurn(chatId);
+				if (!isAborted && (!requestCycle || requestCycle.dispatched)) triggerFlashcards(chatId);
 				// Wave C steer settlement: the live agent is dead (no more
 				// followUp handoffs) - reconcile the steer registry against
 				// what this run actually persisted (in-run injections
@@ -645,7 +647,7 @@ export async function handleChatInput(
 								fresh.compaction?.thresholdTokens,
 								catalogContextLimits().get(kickModelId),
 							),
-							systemPromptTokens: Math.ceil(composeInstructions(freshRecord.kind === "practice" ? "practice" : "teacher").length / 4),
+							systemPromptTokens: Math.ceil((composeInstructions(freshRecord.kind === "practice" ? "practice" : "teacher", fresh.agent.prompts).length + learningPromptContext(chatId).length) / 4),
 						};
 					}, chatId);
 			},

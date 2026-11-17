@@ -37,7 +37,8 @@ import type { PlanTree } from "./contracts/plan.ts";
 import { derivePlanStatusesLh, derivedNodeStatus } from "./contracts/plan.ts";
 import { COMPACTED_HISTORY_HEADER } from "./contracts/chat.ts";
 import type { LhMessage, LhMarkerMessage } from "./native-messages.ts";
-import { newMessageId } from "./native-messages.ts";
+import { learnerAnswerOf, newMessageId } from "./native-messages.ts";
+import { compactAnswerForModel } from "./question-core.ts";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { AssistantMessage, ToolResultMessage, SystemMessage } from "@earendil-works/pi-ai";
 
@@ -303,9 +304,8 @@ export function keptIndexFor(messages: readonly LhMessage[], marker: LhMarkerMes
 
 // ─── the summarizer input (pi's mirror: labeled text, truncated results) ─────
 
-/** Serialize a message span as labeled text for the summarizer. Tool
- * results truncate at ~2k chars (the kept tail carries them verbatim for
- * the model; the SUMMARY only needs their gist). */
+/** Serialize a message span as labeled text for the summarizer. Generic tool
+ * output is bounded; learner answers and follow-up questions are kept in full. */
 export function serializeForSummary(messages: readonly LhMessage[]): string {
 	const lines: string[] = [];
 	for (const m of messages) {
@@ -324,6 +324,11 @@ export function serializeForSummary(messages: readonly LhMessage[]): string {
 			if (blocks.length > 0) lines.push(`[TUTOR] ${blocks.join("\n")}`);
 		} else if (role === "toolResult") {
 			const result = m as ToolResultMessage;
+			const answer = learnerAnswerOf(m);
+			if (answer) {
+				lines.push(`[LEARNER ANSWER for ${result.toolName}] ${JSON.stringify(compactAnswerForModel(answer))}`);
+				continue;
+			}
 			const text = result.content
 				.map((c) => (c.type === "text" ? c.text : JSON.stringify(c)))
 				.join("\n");
@@ -385,7 +390,7 @@ export function buildCompactionPrompt(input: {
 Write the summary with EXACTLY these sections, in this order:
 
 ## The learner's understanding
-The most detailed picture you can give of what this learner knows and how that EVOLVED across the session: what they answered and how well (quiz outcomes, correct reasoning, mistakes), their stated or displayed confidence, misconceptions that surfaced, which were corrected and which still stand. This section carries the most weight — future teaching decisions hang on it.
+The most detailed picture you can give of what this learner knows and how that EVOLVED across the session: what they answered and how well (quiz outcomes, correct reasoning, mistakes), their stated or displayed confidence, misconceptions that surfaced, which were corrected and which still stand. Preserve concrete learner questions, reading notes, and unresolved follow-ups, including notes attached to skipped questions. Distinguish open questions from diagnosed misconceptions and include later corrections so stale judgments do not override new evidence. This section carries the most weight — future teaching decisions hang on it.
 
 ## The teaching arc
 How the session progressed: what was covered and in what order, which explanations landed and which didn't, how the learner responded, where the momentum went. Include probe-phase findings if present.

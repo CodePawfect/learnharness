@@ -261,8 +261,8 @@ export const quizInputObject = Type.Object({
 			"plan_init node slugs (validated at call time; a mismatched id is rejected back to you). " +
 			"The lesson's position on the map derives from these tags (the node the latest tagged question is about is " +
 			"where the map stands; earlier ones count as visited). A node takes as many questions as it deserves: stay on " +
-			"one node for as many turns as the understanding needs — one reasoning step at a time, never rush forward. " +
-			"For off-map checks use ask_user_question.",
+			"one node for as many turns as the understanding needs, adapting chunk size to the learner. " +
+			"For an off-map graded check, update plan_init first; use ask_user_question for preferences or decisions.",
 	}),
 	...quizInputBase.properties,
 });
@@ -331,8 +331,8 @@ export const explainInputObject = Type.Object({
 			"plan_init node slugs (validated at call time; a mismatched id is rejected back to you). " +
 			"The lesson's position on the map derives from these tags (the node the latest tagged question is about is " +
 			"where the map stands; earlier ones count as visited). A node takes as many questions as it deserves: stay on " +
-			"one node for as many turns as the understanding needs — one reasoning step at a time, never rush forward. " +
-			"For off-map checks use ask_user_question.",
+			"one node for as many turns as the understanding needs, adapting chunk size to the learner. " +
+			"For an off-map graded check, update plan_init first; use ask_user_question for preferences or decisions.",
 	}),
 	...explainInputBase.properties,
 });
@@ -761,7 +761,7 @@ export function buildAnswer(qd: QuestionData, req: AnswerRequest, tool?: string)
  */
 /** The dismissal record (ESC-abort from a pending question, owner
  *  2026-10-02): the minimum honest answer. The model sees
- *  {kind, dismissed:true} via compactAnswerForModel; the answered card
+ *  {kind, dismissed:true} plus learner thinking via compactAnswerForModel; the answered card
  *  renders the question text + "skipped". Rides the same answer path —
  *  the teacher acknowledges the skip in its next turn, exactly like any
  *  answer. */
@@ -777,8 +777,14 @@ export function dismissedAnswer(kind: QuestionKind, questionText: string): Quest
 }
 
 export function compactAnswerForModel(ad: QuestionAnswerData): Record<string, unknown> {
-	if (ad.dismissed) return { kind: ad.kind, dismissed: true };
 	const out: Record<string, unknown> = { kind: ad.kind };
+	// A skip makes no performance claim, but its notes can contain a question
+	// the tutor still needs to answer. Preserve both thinking lanes, including
+	// the legacy note key, before returning the dismissal flag.
+	const thinking = ad.thinking ?? ad.note;
+	if (thinking) out.thinking = thinking;
+	if (ad.readingThinking) out.thinkingWhileReading = ad.readingThinking;
+	if (ad.dismissed) return { ...out, dismissed: true };
 	if (ad.dontKnow) out.dontKnow = true;
 	// Array.isArray: the seam is called with `unknown` answers (test
 	// fixtures, foreign records) — degrade to omission, never crash.
@@ -791,12 +797,5 @@ export function compactAnswerForModel(ad: QuestionAnswerData): Record<string, un
 	// incorrect and carries no confidence: both stay implicit.)
 	if (ad.correct !== undefined && !ad.dontKnow) out.correct = ad.correct;
 	if (ad.confidence !== undefined) out.confidence = ad.confidence;
-	// Two DISTINCT thinking channels, clearly keyed so the model never
-	// conflates them (owner 2026-10-03): reasoning on the question vs
-	// thinking while reading the teaching. `note` is the pre-rename key —
-	// old records replay through here too, so both feed `thinking`.
-	const thinking = ad.thinking ?? ad.note;
-	if (thinking) out.thinking = thinking;
-	if (ad.readingThinking) out.thinkingWhileReading = ad.readingThinking;
 	return out;
 }

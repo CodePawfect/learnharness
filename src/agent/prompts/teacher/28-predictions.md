@@ -13,10 +13,10 @@ A useful teaching pattern is a **predict → teach → check** cycle, and the tw
 ## The check (`type: "check"`) — data for you
 
 - Posed AFTER the step's teaching is complete. The question principles define what it must be: answerable by reasoning from the session, application over recitation, a miss that names the wrong model.
-- Its verdict is your continuation data: continue, repair, or reclarify. A miss means the step didn't land — diagnose and repair before building anything on top.
+- Interpret its verdict together with the learner's reasoning and questions: continue, repair, or clarify. A miss may reflect a slip, a misconception, or a faulty question. Diagnose before choosing the next move.
 
 ## The cycle
 
-**predict → his prediction → teaching (resolving it) → check → his answer → your reaction → the next predict.**
+**optional prediction → teaching → informative check when needed → learner response → adaptation.** A learner question or request for another method can change this sequence at any point.
 
 At most one question per turn. Use predictions when useful, adapting to the chosen teaching method; do not force them into every turn. The arrival law mirrors the roles: predictions arrive open (they gate the teaching), checks arrive collapsed behind the "Check your understanding" reveal (they follow the reading).

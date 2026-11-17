@@ -35,7 +35,7 @@
 
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { AssistantMessage, Message, ToolResultMessage, UserMessage } from "@earendil-works/pi-ai";
-import { QUESTION_TOOLS } from "./pending.ts";
+import { QUESTION_TOOLS, toolQuestionKind } from "./pending.ts";
 import {
 	CONCLUDE_ACK_TEXT,
 	HANDOFF_TEXT,
@@ -199,6 +199,40 @@ export function newAnswerResult(
 		isError: false,
 		timestamp: Date.now(),
 	};
+}
+
+/** Only the app's successful learner-answer results carry attributable prose.
+ * Tool output, option labels, and the tutor's committed answer are not quotes
+ * from the learner. Keep legacy question names and the old note field readable. */
+export function learnerAnswerOf(message: LhMessage): QuestionAnswerData | undefined {
+	if (message.role !== "toolResult" || message.isError ||
+		!(QUESTION_TOOLS as readonly string[]).includes(message.toolName)) return;
+	const value = message.details;
+	if (!value || typeof value !== "object" || Array.isArray(value)) return;
+	const answer = value as unknown as QuestionAnswerData;
+	if (answer.kind !== toolQuestionKind(message.toolName) || typeof answer.questionText !== "string" ||
+		typeof answer.dontKnow !== "boolean" || !Array.isArray(answer.answers) || typeof answer.answeredAt !== "string") return;
+	if (answer.answers.some(a => !a || typeof a.label !== "string" || typeof a.index !== "number")) return;
+	return answer;
+}
+
+/** Separate learner-authored fields: a quote must occur within one field,
+ * never across a synthetic concatenation or in model-authored answer labels. */
+export function learnerProseOf(message: LhMessage): string[] {
+	let fields: unknown[] = [];
+	if (message.role === "user") {
+		fields = typeof message.content === "string" ? [message.content]
+			: message.content.filter(p => p.type === "text").map(p => p.text);
+	} else if (message.role === "custom" && message.customType === "practice-thinking") {
+		fields = [(message.details as { text?: unknown } | null)?.text];
+	} else {
+		const answer = learnerAnswerOf(message);
+		if (answer) fields = [
+			...(!answer.dismissed ? [answer.text, answer.other] : []),
+			answer.thinking ?? answer.note, answer.readingThinking,
+		];
+	}
+	return fields.filter((field): field is string => typeof field === "string" && Boolean(field.trim()));
 }
 
 /** The probe→teach handoff wake: scaffolding, not speech — the model reads
@@ -619,7 +653,13 @@ export function toLlmMessages(messages: readonly AgentMessage[]): Message[] {
 		}
 		// Strip the record id: the wire carries the native shape only.
 		const { id: _id, ...native } = m as LhMessage;
-		out.push(native as Message);
+		// Older records kept reading notes in details while dropping them from
+		// the dismissed result's content. Reproject those at replay time without
+		// rewriting history or touching ordinary tool results/provider signatures.
+		const answer = role === "toolResult" ? learnerAnswerOf(m as LhMessage) : undefined;
+		out.push(answer?.dismissed
+			? { ...native, content: [{ type: "text", text: JSON.stringify(compactAnswerForModel(answer)) }] } as Message
+			: native as Message);
 		// Repair unanswered calls from completed generations, not calls in
 		// failed generations. Pi filters error/aborted assistants itself;
 		// adding results for their unexecuted calls would leave orphans.

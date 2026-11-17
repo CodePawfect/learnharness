@@ -155,7 +155,7 @@ function quizDescription(delta: { name: "quiz" | "probe"; nodeId: boolean; types
 			? "Every call declares `type` — the question's role in the teaching cycle; the field's own description says when each kind fires. "
 			: "") +
 		(delta.nodeId
-			? "Set `nodeId` (required) to the plan node this question is about — validated at call time against the session's plan map. For off-map checks use ask_user_question. "
+			? "Set `nodeId` (required) to the plan node this question is about — validated at call time against the session's plan map. For an off-map graded check, update plan_init first; use ask_user_question for preferences or decisions. "
 			: "") +
 		"ONE question per turn: call a single " +
 		delta.name +
@@ -370,7 +370,7 @@ function nodeIdProblem(ctx: Pick<PlanToolContext, "chatId" | "chatStore">, nodeI
  *  grading contract is untouched). Reads the LIVE chat record, so rewrites
  *  mid-turn are honored, and with no tree yet every nodeId is rejected.
  *  nodeId is REQUIRED (owner ruling 2026-09-26): the untagged ad-hoc quiz is
- *  gone — off-map checks route through ask_user_question, and the teach
+ *  gone — off-map graded checks require a plan update, and the teach
  *  seam (first tagged quiz) is structurally guaranteed. */
 export function teachQuizToolFor(ctx: Pick<PlanToolContext, "chatId" | "chatStore">): AgentTool<typeof quizInputObject> {
 	return {

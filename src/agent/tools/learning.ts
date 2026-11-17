@@ -3,6 +3,7 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { ChatStore, GraphStore } from "../../core/ports.ts";
 import { learningProgress, parseCheckInput, parseGoalInput, type LearningStore, type LearningObservation } from "../../core/learning.ts";
 import { invalidInputResult } from "../tool-execute.ts";
+import { learnerProseOf } from "../../core/native-messages.ts";
 
 export interface LearningToolContext {
 	store: LearningStore;
@@ -29,9 +30,15 @@ const proposalSchema = Type.Object({
 	checks: Type.Array(draftCheckSchema, { minItems: 1, maxItems: 8 }),
 });
 
+const statusSchema = Type.Object({
+	goalId: Type.Optional(Type.String({ minLength: 1, maxLength: 160 })),
+	goalOffset: Type.Optional(Type.Integer({ minimum: 0 })),
+	observationOffset: Type.Optional(Type.Integer({ minimum: 0 })),
+});
+
 const observationSchema = Type.Object({
 	goalId: Type.String(),
-	quote: Type.String({ minLength: 1, maxLength: 4000, description: "Verbatim quote from an actual learner message or practice-thinking submission in this session." }),
+	quote: Type.String({ minLength: 1, maxLength: 4000, description: "Verbatim learner-authored quote from chat, a free-text answer, thinking, thinkingWhileReading, or practice thinking in this session. Never quote option labels or tutor solutions." }),
 	note: Type.String({ minLength: 1, maxLength: 4000 }),
 	judgment: Type.Union([Type.Literal("progress"), Type.Literal("gap"), Type.Literal("misconception")]),
 });
@@ -43,18 +50,29 @@ function result(value: unknown) {
 /** Additive tools shared by the prober, teacher, and practitioner. They can
  * propose checks and record attributed observations, never verify or grade. */
 export function learningTools(ctx: LearningToolContext): Record<string, AgentTool<any>> {
-	const status: AgentTool = {
+	const status: AgentTool<typeof statusSchema> = {
 		name: "learning_status", label: "Learning evidence",
-		description: "Read active learning goals, delayed-review status, preferences, and recent tutor observations. Covered concepts are not evidence of retention. Answer keys are never returned.",
-		parameters: Type.Object({}),
-		execute: async () => {
+		description: "Read active learning goals, delayed-review status, preferences, and tutor observations. Pass goalId for one goal, or goalOffset/nextGoalOffset to page goals (newest first, 100 per page). Observations are newest first, five per goal; use observationOffset/nextObservationOffset for older evidence. Covered concepts are not evidence of retention. Answer keys are never returned.",
+		parameters: statusSchema,
+		execute: async (_toolCallId, input) => {
 			const data = ctx.store.read();
-			return result({ preferences: data.preferences, goals: data.goals.filter(g => !g.archived).slice(-100).map(g => ({
-				...g, progress: learningProgress(g, data, Date.now()),
-				observations: data.observations.filter(o => o.goalId === g.id).slice(-5),
-				checksAwaitingApproval: data.checks.filter(c => c.goalId === g.id && !c.retired && !c.keyReviewedAt).length,
-				reviewQuestions: data.checks.filter(c => c.goalId === g.id && !c.retired).map(c => ({ id: c.id, prompt: c.prompt, kind: c.kind })),
-			})), note: "Demonstrated/retained are conservative observations against learner-checked keys, not certified mastery. Tutor observations are model judgments." });
+			const active = data.goals.filter(g => !g.archived).reverse();
+			const goalOffset = input.goalOffset ?? 0;
+			const goals = input.goalId ? active.filter(g => g.id === input.goalId) : active.slice(goalOffset, goalOffset + 100);
+			if (input.goalId && !goals.length) return invalidInputResult("learning_status", ["Unknown or archived learning goal."]);
+			const offset = input.observationOffset ?? 0;
+			return result({ preferences: data.preferences, activeGoalCount: active.length,
+				nextGoalOffset: !input.goalId && goalOffset + 100 < active.length ? goalOffset + 100 : null,
+				goals: goals.map(g => {
+					const observations = data.observations.filter(o => o.goalId === g.id).reverse();
+					return {
+						...g, progress: learningProgress(g, data, Date.now()),
+						observations: observations.slice(offset, offset + 5), observationCount: observations.length,
+						nextObservationOffset: offset + 5 < observations.length ? offset + 5 : null,
+						checksAwaitingApproval: data.checks.filter(c => c.goalId === g.id && !c.retired && !c.keyReviewedAt).length,
+						reviewQuestions: data.checks.filter(c => c.goalId === g.id && !c.retired).map(c => ({ id: c.id, prompt: c.prompt, kind: c.kind })),
+					};
+			}), note: "Demonstrated/retained are conservative observations against learner-checked keys, not certified mastery. Tutor observations are dated model judgments; later evidence may correct them." });
 		},
 	};
 	const propose: AgentTool<typeof proposalSchema> = {
@@ -91,15 +109,7 @@ export function learningTools(ctx: LearningToolContext): Record<string, AgentToo
 		execute: async (_toolCallId, input) => {
 			try {
 				const record = ctx.chatStore.getChat(ctx.chatId);
-				const message = record?.messages.findLast(m => {
-					if (m.role === "custom" && m.customType === "practice-thinking") {
-						const text = (m.details as { text?: unknown })?.text;
-						return typeof text === "string" && text.includes(input.quote);
-					}
-					if (m.role !== "user") return false;
-					const text = typeof m.content === "string" ? m.content : m.content.filter(p => p.type === "text").map(p => p.text).join("\n");
-					return text.includes(input.quote);
-				});
+				const message = record?.messages.findLast(m => learnerProseOf(m).some(text => text.includes(input.quote)));
 				if (!message || !input.quote.trim()) throw new Error("No persisted learner message contains that exact quote.");
 				return result(ctx.store.update(data => {
 					if (!data.goals.some(g => g.id === input.goalId && !g.archived)) throw new Error("Unknown or archived learning goal.");

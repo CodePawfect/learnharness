@@ -11,6 +11,7 @@ import { graphStore } from "../store/graph.ts";
 import { jobStore } from "../store/jobs.ts";
 import { settingsStore } from "../store/settings.ts";
 import { learningStore } from "../store/learning.ts";
+import { flashcardStore } from "../store/flashcards.ts";
 import { resolveSettings, type EffectiveSettings } from "../core/settings-resolution.ts";
 /** The wired adapters. Satisfies core/graph.ts's GraphDeps structurally. */
 export const stores = {
@@ -19,6 +20,7 @@ export const stores = {
 	jobStore,
 	settingsStore,
 	learningStore,
+	flashcardStore,
 };
 
 export type Stores = typeof stores;

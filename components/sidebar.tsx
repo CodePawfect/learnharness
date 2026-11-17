@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { MenuShell } from "@/components/menu-shell";
 import { DeleteSessionDialog } from "@/components/delete-session-dialog";
 import type { ChatDeleteMode } from "@/src/core";
-import { CalendarCheckIcon, DumbbellIcon, PanelLeftCloseIcon, PanelLeftOpenIcon, PlusIcon, SearchIcon, SettingsIcon } from "lucide-react";
+import { CalendarCheckIcon, LayersIcon, DumbbellIcon, PanelLeftCloseIcon, PanelLeftOpenIcon, PlusIcon, SearchIcon, SettingsIcon } from "lucide-react";
 import { ActivitySection } from "@/components/activity-dock";
 import { CoverageMenuBlock } from "@/components/extraction-coverage";
 import { LhMark } from "@/components/lh-mark";
@@ -716,6 +716,9 @@ function SessionsSidebar() {
 					</button>
 					<Link href="/review" aria-current={pathname === "/review" ? "page" : undefined} className={cn("flex min-h-9 w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-xs uppercase tracking-wider transition-colors hover:bg-accent hover:text-foreground", pathname === "/review" ? "bg-accent text-foreground" : "text-muted-foreground")}>
 						<CalendarCheckIcon className="size-3" />Review
+					</Link>
+					<Link href="/flashcards" aria-current={pathname === "/flashcards" ? "page" : undefined} className={cn("flex min-h-9 w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-xs uppercase tracking-wider transition-colors hover:bg-accent hover:text-foreground", pathname === "/flashcards" ? "bg-accent text-foreground" : "text-muted-foreground")}>
+						<LayersIcon className="size-3" />Flashcards
 					</Link>
 				</div>
 

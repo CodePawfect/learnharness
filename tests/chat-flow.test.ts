@@ -1378,6 +1378,26 @@ it("explain tool call persists as a pending part; the free-text answer reveals t
 // ─── the silent dismissal (owner design 2026-10-03, "A2") ──────────────────
 
 describe("the silent dismissal (A2)", () => {
+	it("delivers a skipped question's reading follow-up on the next real chat turn and preserves it on disk", async () => {
+		const { engine, calls } = scriptedTeacher(defaultLesson);
+		const chat = createConfiguredChat("Test: skipped question follow-up");
+		createdChats.push(chat.id);
+		await drainTurn(post(chat.id, { type: "text", text: "teach me the solar system" }), agentFactory(engine));
+		const readingThinking = "Why does distance from the Sun not determine the hottest planet?";
+		const response = await dismissRoute.POST(new Request(`http://test/api/chats/${chat.id}/dismiss`, {
+			method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ input: {
+				type: "dismiss", toolCallId: "call-1", answer: { ...dismissedAnswer("quiz", QUIZ_INPUT.question), readingThinking },
+			} }),
+		}), { params: Promise.resolve({ id: chat.id }) });
+		assert.equal(response.status, 200);
+		assert.equal(calls.length, 1, "a skip still does not wake the tutor automatically");
+		const saved = chatStore.getChat(chat.id)!.messages.at(-1)!;
+		assert.ok(saved.role === "toolResult");
+		assert.equal((saved.details as { readingThinking?: string }).readingThinking, readingThinking);
+		await drainTurn(post(chat.id, { type: "text", text: "Please answer my reading question." }), agentFactory(engine));
+		assert.ok(calls[1]!.join("\n").includes(readingThinking), "the model receives the actual question, not only a skip flag");
+	});
+
 	it("writes the toolResult with NO wake — the next plain message carries it to the model", async () => {
 		const { engine, calls } = scriptedTeacher(defaultLesson);
 		const chat = createConfiguredChat("Test: silent dismissal");
